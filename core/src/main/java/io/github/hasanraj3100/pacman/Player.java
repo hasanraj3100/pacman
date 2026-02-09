@@ -2,10 +2,9 @@ package io.github.hasanraj3100.pacman;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 /** Pacman: grid-aligned movement with a buffered turn, driven by the arrow keys or WASD. */
 public class Player {
@@ -14,20 +13,17 @@ public class Player {
     private static final float SPEED = 4.5f * Maze.TILE_SIZE;
 
     private final Maze maze;
-    private final Texture placeholder;
+    private final Animation<TextureRegion> animation;
 
     private float x, y;
     private Direction direction = Direction.LEFT;
     private Direction desiredDirection = Direction.LEFT;
+    private float animTime;
     private boolean moving;
 
-    public Player(Maze maze) {
+    public Player(Maze maze, Animation<TextureRegion> animation) {
         this.maze = maze;
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.YELLOW);
-        pixmap.fill();
-        placeholder = new Texture(pixmap);
-        pixmap.dispose();
+        this.animation = animation;
         resetPosition();
     }
 
@@ -37,6 +33,7 @@ public class Player {
         direction = Direction.LEFT;
         desiredDirection = Direction.LEFT;
         moving = false;
+        animTime = 0f;
     }
 
     public void handleInput() {
@@ -74,6 +71,7 @@ public class Player {
                 case LEFT: x -= SPEED * delta; break;
                 case RIGHT: x += SPEED * delta; break;
             }
+            animTime += delta;
         }
     }
 
@@ -106,10 +104,15 @@ public class Player {
     }
 
     public void render(SpriteBatch batch) {
-        batch.draw(placeholder, x, y, Maze.TILE_SIZE, Maze.TILE_SIZE);
-    }
-
-    public void dispose() {
-        placeholder.dispose();
+        TextureRegion frame = moving ? animation.getKeyFrame(animTime, true) : animation.getKeyFrame(0);
+        float size = Maze.TILE_SIZE;
+        float rotation;
+        switch (direction) {
+            case RIGHT: rotation = 0f; break;
+            case UP: rotation = 90f; break;
+            case LEFT: rotation = 180f; break;
+            case DOWN: default: rotation = 270f; break;
+        }
+        batch.draw(frame, x, y, size / 2f, size / 2f, size, size, 1f, 1f, rotation);
     }
 }

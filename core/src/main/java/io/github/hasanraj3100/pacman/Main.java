@@ -2,6 +2,7 @@ package io.github.hasanraj3100.pacman;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -23,8 +24,10 @@ public class Main extends ApplicationAdapter {
         atlas = new TextureAtlas(Gdx.files.internal("pacman.atlas"));
         dotRegion = atlas.findRegion("dot");
         pelletRegion = atlas.findRegion("pellet");
+        Animation<TextureRegion> pacmanAnim = new Animation<>(0.08f, atlas.findRegions("pacman"), Animation.PlayMode.LOOP_PINGPONG);
+
         maze = new Maze();
-        player = new Player(maze);
+        player = new Player(maze, pacmanAnim);
     }
 
     @Override
@@ -46,6 +49,5 @@ public class Main extends ApplicationAdapter {
         batch.dispose();
         atlas.dispose();
         maze.dispose();
-        player.dispose();
     }
 }
