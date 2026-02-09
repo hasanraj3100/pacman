@@ -14,6 +14,7 @@ public class Main extends ApplicationAdapter {
     private TextureRegion dotRegion;
     private TextureRegion pelletRegion;
     private Maze maze;
+    private Player player;
     private float time;
 
     @Override
@@ -23,14 +24,20 @@ public class Main extends ApplicationAdapter {
         dotRegion = atlas.findRegion("dot");
         pelletRegion = atlas.findRegion("pellet");
         maze = new Maze();
+        player = new Player(maze);
     }
 
     @Override
     public void render() {
-        time += Gdx.graphics.getDeltaTime();
+        float delta = Gdx.graphics.getDeltaTime();
+        time += delta;
+        player.handleInput();
+        player.update(delta);
+
         ScreenUtils.clear(0.05f, 0.05f, 0.08f, 1f);
         batch.begin();
         maze.render(batch, dotRegion, pelletRegion, time);
+        player.render(batch);
         batch.end();
     }
 
@@ -39,5 +46,6 @@ public class Main extends ApplicationAdapter {
         batch.dispose();
         atlas.dispose();
         maze.dispose();
+        player.dispose();
     }
 }
