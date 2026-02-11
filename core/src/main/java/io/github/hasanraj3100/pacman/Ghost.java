@@ -13,18 +13,26 @@ public class Ghost {
     public enum Direction { UP, DOWN, LEFT, RIGHT }
 
     private static final float SPEED = 4f * Maze.TILE_SIZE;
+    private static final float SCARED_DURATION = 6f;
+    private static final float FLASH_DURATION = 2f;
 
     private final Maze maze;
     private final Animation<TextureRegion> normalAnimation;
+    private final Animation<TextureRegion> scaredAnimation;
+    private final Animation<TextureRegion> scaredFlashAnimation;
     private final Direction startDirection;
 
     private float x, y;
     private Direction direction;
     private float animTime;
+    private float scaredTimer;
 
-    public Ghost(Maze maze, Animation<TextureRegion> normalAnimation, Direction startDirection) {
+    public Ghost(Maze maze, Animation<TextureRegion> normalAnimation, Animation<TextureRegion> scaredAnimation,
+                 Animation<TextureRegion> scaredFlashAnimation, Direction startDirection) {
         this.maze = maze;
         this.normalAnimation = normalAnimation;
+        this.scaredAnimation = scaredAnimation;
+        this.scaredFlashAnimation = scaredFlashAnimation;
         this.startDirection = startDirection;
         resetPosition();
     }
@@ -33,10 +41,20 @@ public class Ghost {
         x = maze.colToX(maze.getGhostSpawnCol());
         y = maze.rowToY(maze.getGhostSpawnRow());
         direction = startDirection;
+        scaredTimer = 0f;
         animTime = 0f;
     }
 
+    public void makeScared() {
+        scaredTimer = SCARED_DURATION;
+    }
+
+    public boolean isScared() {
+        return scaredTimer > 0f;
+    }
+
     public void update(float delta) {
+        if (scaredTimer > 0f) scaredTimer = Math.max(0f, scaredTimer - delta);
         animTime += delta;
 
         int col = maze.xToCol(x);
@@ -51,11 +69,12 @@ public class Ghost {
             direction = pickDirection(col, row);
         }
 
+        float speed = SPEED * (isScared() ? 0.6f : 1f);
         switch (direction) {
-            case UP: y += SPEED * delta; break;
-            case DOWN: y -= SPEED * delta; break;
-            case LEFT: x -= SPEED * delta; break;
-            case RIGHT: x += SPEED * delta; break;
+            case UP: y += speed * delta; break;
+            case DOWN: y -= speed * delta; break;
+            case LEFT: x -= speed * delta; break;
+            case RIGHT: x += speed * delta; break;
         }
     }
 
@@ -101,7 +120,12 @@ public class Ghost {
     }
 
     public void render(SpriteBatch batch) {
-        TextureRegion frame = normalAnimation.getKeyFrame(animTime, true);
+        Animation<TextureRegion> anim = normalAnimation;
+        if (isScared()) {
+            boolean flashOn = scaredTimer < FLASH_DURATION && ((int) (scaredTimer * 6f) % 2 == 0);
+            anim = flashOn ? scaredFlashAnimation : scaredAnimation;
+        }
+        TextureRegion frame = anim.getKeyFrame(animTime, true);
         batch.draw(frame, x, y, Maze.TILE_SIZE, Maze.TILE_SIZE);
     }
 }

@@ -47,14 +47,16 @@ public class Main extends ApplicationAdapter {
         Animation<TextureRegion> blueAnim = new Animation<>(0.2f, atlas.findRegions("ghost_blue"), Animation.PlayMode.LOOP);
         Animation<TextureRegion> pinkAnim = new Animation<>(0.2f, atlas.findRegions("ghost_pink"), Animation.PlayMode.LOOP);
         Animation<TextureRegion> orangeAnim = new Animation<>(0.2f, atlas.findRegions("ghost_orange"), Animation.PlayMode.LOOP);
+        Animation<TextureRegion> scaredAnim = new Animation<>(0.2f, atlas.findRegions("ghost_scared"), Animation.PlayMode.LOOP);
+        Animation<TextureRegion> scaredFlashAnim = new Animation<>(0.2f, atlas.findRegions("ghost_scared_flash"), Animation.PlayMode.LOOP);
 
         maze = new Maze();
         player = new Player(maze, pacmanAnim);
         ghosts = new ArrayList<>();
-        ghosts.add(new Ghost(maze, redAnim, Ghost.Direction.LEFT));
-        ghosts.add(new Ghost(maze, blueAnim, Ghost.Direction.RIGHT));
-        ghosts.add(new Ghost(maze, pinkAnim, Ghost.Direction.UP));
-        ghosts.add(new Ghost(maze, orangeAnim, Ghost.Direction.DOWN));
+        ghosts.add(new Ghost(maze, redAnim, scaredAnim, scaredFlashAnim, Ghost.Direction.LEFT));
+        ghosts.add(new Ghost(maze, blueAnim, scaredAnim, scaredFlashAnim, Ghost.Direction.RIGHT));
+        ghosts.add(new Ghost(maze, pinkAnim, scaredAnim, scaredFlashAnim, Ghost.Direction.UP));
+        ghosts.add(new Ghost(maze, orangeAnim, scaredAnim, scaredFlashAnim, Ghost.Direction.DOWN));
 
         lives = 3;
         state = State.READY;
@@ -84,17 +86,27 @@ public class Main extends ApplicationAdapter {
         player.handleInput();
         player.update(delta);
         for (Ghost g : ghosts) g.update(delta);
-        score += maze.eatAt(player.getCol(), player.getRow());
+
+        int points = maze.eatAt(player.getCol(), player.getRow());
+        if (points == Maze.EAT_PELLET) {
+            for (Ghost g : ghosts) g.makeScared();
+        }
+        score += points;
 
         for (Ghost g : ghosts) {
             float dx = g.getCenterX() - player.getCenterX();
             float dy = g.getCenterY() - player.getCenterY();
             if (dx * dx + dy * dy <= GHOST_CATCH_RADIUS * GHOST_CATCH_RADIUS) {
-                lives--;
-                resetPositions();
-                state = State.READY;
-                stateTimer = READY_DURATION;
-                break;
+                if (g.isScared()) {
+                    g.resetPosition();
+                    score += 200;
+                } else {
+                    lives--;
+                    resetPositions();
+                    state = State.READY;
+                    stateTimer = READY_DURATION;
+                    break;
+                }
             }
         }
     }
