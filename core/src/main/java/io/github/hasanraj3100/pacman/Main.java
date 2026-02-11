@@ -14,7 +14,11 @@ import java.util.List;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
+    private enum State { READY, PLAYING }
+
+    private static final float READY_DURATION = 1.5f;
     private static final float HUD_HEIGHT = 48f;
+    private static final float GHOST_CATCH_RADIUS = Maze.TILE_SIZE * 0.5f;
 
     private SpriteBatch batch;
     private TextureAtlas atlas;
@@ -24,8 +28,11 @@ public class Main extends ApplicationAdapter {
     private Maze maze;
     private Player player;
     private List<Ghost> ghosts;
+    private State state;
+    private float stateTimer;
     private float time;
     private int score;
+    private int lives;
 
     @Override
     public void create() {
@@ -48,23 +55,58 @@ public class Main extends ApplicationAdapter {
         ghosts.add(new Ghost(maze, blueAnim, Ghost.Direction.RIGHT));
         ghosts.add(new Ghost(maze, pinkAnim, Ghost.Direction.UP));
         ghosts.add(new Ghost(maze, orangeAnim, Ghost.Direction.DOWN));
+
+        lives = 3;
+        state = State.READY;
+        stateTimer = READY_DURATION;
+    }
+
+    private void resetPositions() {
+        player.resetPosition();
+        for (Ghost g : ghosts) g.resetPosition();
     }
 
     @Override
     public void render() {
         float delta = Gdx.graphics.getDeltaTime();
         time += delta;
+        update(delta);
+        draw();
+    }
+
+    private void update(float delta) {
+        if (state == State.READY) {
+            stateTimer -= delta;
+            if (stateTimer <= 0f) state = State.PLAYING;
+            return;
+        }
+
         player.handleInput();
         player.update(delta);
         for (Ghost g : ghosts) g.update(delta);
         score += maze.eatAt(player.getCol(), player.getRow());
 
+        for (Ghost g : ghosts) {
+            float dx = g.getCenterX() - player.getCenterX();
+            float dy = g.getCenterY() - player.getCenterY();
+            if (dx * dx + dy * dy <= GHOST_CATCH_RADIUS * GHOST_CATCH_RADIUS) {
+                lives--;
+                resetPositions();
+                state = State.READY;
+                stateTimer = READY_DURATION;
+                break;
+            }
+        }
+    }
+
+    private void draw() {
         ScreenUtils.clear(0.05f, 0.05f, 0.08f, 1f);
         batch.begin();
         maze.render(batch, dotRegion, pelletRegion, time);
         player.render(batch);
         for (Ghost g : ghosts) g.render(batch);
         font.draw(batch, "SCORE: " + score, 12, maze.rows * Maze.TILE_SIZE + HUD_HEIGHT - 12);
+        font.draw(batch, "LIVES: " + lives, maze.cols * Maze.TILE_SIZE - 100, maze.rows * Maze.TILE_SIZE + HUD_HEIGHT - 12);
         batch.end();
     }
 
