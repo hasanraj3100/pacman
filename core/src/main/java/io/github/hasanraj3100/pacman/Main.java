@@ -14,7 +14,7 @@ import java.util.List;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
-    private enum State { READY, PLAYING }
+    private enum State { READY, PLAYING, WIN, GAME_OVER }
 
     private static final float READY_DURATION = 1.5f;
     private static final float HUD_HEIGHT = 48f;
@@ -77,6 +77,9 @@ public class Main extends ApplicationAdapter {
     }
 
     private void update(float delta) {
+        if (state == State.WIN || state == State.GAME_OVER) {
+            return;
+        }
         if (state == State.READY) {
             stateTimer -= delta;
             if (stateTimer <= 0f) state = State.PLAYING;
@@ -101,13 +104,25 @@ public class Main extends ApplicationAdapter {
                     g.resetPosition();
                     score += 200;
                 } else {
-                    lives--;
-                    resetPositions();
-                    state = State.READY;
-                    stateTimer = READY_DURATION;
-                    break;
+                    loseLife();
+                    return;
                 }
             }
+        }
+
+        if (maze.getRemaining() <= 0) {
+            state = State.WIN;
+        }
+    }
+
+    private void loseLife() {
+        lives--;
+        if (lives <= 0) {
+            state = State.GAME_OVER;
+        } else {
+            resetPositions();
+            state = State.READY;
+            stateTimer = READY_DURATION;
         }
     }
 
@@ -119,6 +134,17 @@ public class Main extends ApplicationAdapter {
         for (Ghost g : ghosts) g.render(batch);
         font.draw(batch, "SCORE: " + score, 12, maze.rows * Maze.TILE_SIZE + HUD_HEIGHT - 12);
         font.draw(batch, "LIVES: " + lives, maze.cols * Maze.TILE_SIZE - 100, maze.rows * Maze.TILE_SIZE + HUD_HEIGHT - 12);
+
+        String message = null;
+        switch (state) {
+            case READY: message = "READY!"; break;
+            case WIN: message = "YOU WIN!"; break;
+            case GAME_OVER: message = "GAME OVER"; break;
+            default: break;
+        }
+        if (message != null) {
+            font.draw(batch, message, maze.cols * Maze.TILE_SIZE / 2f - 40, maze.rows * Maze.TILE_SIZE / 2f);
+        }
         batch.end();
     }
 
