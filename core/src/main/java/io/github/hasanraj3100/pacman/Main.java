@@ -3,8 +3,10 @@ package io.github.hasanraj3100.pacman;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -24,11 +26,14 @@ public class Main extends ApplicationAdapter {
     private SpriteBatch batch;
     private TextureAtlas atlas;
     private BitmapFont font;
+    private GlyphLayout layout;
     private TextureRegion dotRegion;
     private TextureRegion pelletRegion;
+
     private Maze maze;
     private Player player;
     private List<Ghost> ghosts;
+
     private State state;
     private float stateTimer;
     private float time;
@@ -41,8 +46,10 @@ public class Main extends ApplicationAdapter {
         atlas = new TextureAtlas(Gdx.files.internal("pacman.atlas"));
         font = new BitmapFont();
         font.getData().setScale(1.5f);
+        layout = new GlyphLayout();
         dotRegion = atlas.findRegion("dot");
         pelletRegion = atlas.findRegion("pellet");
+
         Animation<TextureRegion> pacmanAnim = new Animation<>(0.08f, atlas.findRegions("pacman"), Animation.PlayMode.LOOP_PINGPONG);
         Animation<TextureRegion> redAnim = new Animation<>(0.2f, atlas.findRegions("ghost_red"), Animation.PlayMode.LOOP);
         Animation<TextureRegion> blueAnim = new Animation<>(0.2f, atlas.findRegions("ghost_blue"), Animation.PlayMode.LOOP);
@@ -85,18 +92,24 @@ public class Main extends ApplicationAdapter {
     }
 
     private void update(float delta) {
-        if (state == State.WIN || state == State.GAME_OVER) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-                startNewGame();
-            }
-            return;
+        switch (state) {
+            case READY:
+                stateTimer -= delta;
+                if (stateTimer <= 0f) state = State.PLAYING;
+                break;
+            case PLAYING:
+                updatePlaying(delta);
+                break;
+            case WIN:
+            case GAME_OVER:
+                if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+                    startNewGame();
+                }
+                break;
         }
-        if (state == State.READY) {
-            stateTimer -= delta;
-            if (stateTimer <= 0f) state = State.PLAYING;
-            return;
-        }
+    }
 
+    private void updatePlaying(float delta) {
         player.handleInput();
         player.update(delta);
         for (Ghost g : ghosts) g.update(delta);
@@ -143,8 +156,17 @@ public class Main extends ApplicationAdapter {
         maze.render(batch, dotRegion, pelletRegion, time);
         player.render(batch);
         for (Ghost g : ghosts) g.render(batch);
-        font.draw(batch, "SCORE: " + score, 12, maze.rows * Maze.TILE_SIZE + HUD_HEIGHT - 12);
-        font.draw(batch, "LIVES: " + lives, maze.cols * Maze.TILE_SIZE - 100, maze.rows * Maze.TILE_SIZE + HUD_HEIGHT - 12);
+        drawHud();
+        batch.end();
+    }
+
+    private void drawHud() {
+        float mazeHeight = maze.rows * Maze.TILE_SIZE;
+        float mazeWidth = maze.cols * Maze.TILE_SIZE;
+        font.setColor(Color.WHITE);
+        font.draw(batch, "SCORE: " + score, 12, mazeHeight + HUD_HEIGHT - 12);
+        layout.setText(font, "LIVES: " + lives);
+        font.draw(batch, layout, mazeWidth - layout.width - 12, mazeHeight + HUD_HEIGHT - 12);
 
         String message = null;
         switch (state) {
@@ -154,9 +176,11 @@ public class Main extends ApplicationAdapter {
             default: break;
         }
         if (message != null) {
-            font.draw(batch, message, maze.cols * Maze.TILE_SIZE / 2f - 40, maze.rows * Maze.TILE_SIZE / 2f);
+            layout.setText(font, message);
+            float x = (mazeWidth - layout.width) / 2f;
+            float y = mazeHeight / 2f + layout.height / 2f;
+            font.draw(batch, layout, x, y);
         }
-        batch.end();
     }
 
     @Override
