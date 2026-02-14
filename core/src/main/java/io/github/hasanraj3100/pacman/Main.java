@@ -2,6 +2,7 @@ package io.github.hasanraj3100.pacman;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -58,7 +59,14 @@ public class Main extends ApplicationAdapter {
         ghosts.add(new Ghost(maze, pinkAnim, scaredAnim, scaredFlashAnim, Ghost.Direction.UP));
         ghosts.add(new Ghost(maze, orangeAnim, scaredAnim, scaredFlashAnim, Ghost.Direction.DOWN));
 
+        startNewGame();
+    }
+
+    private void startNewGame() {
+        score = 0;
         lives = 3;
+        maze.resetDots();
+        resetPositions();
         state = State.READY;
         stateTimer = READY_DURATION;
     }
@@ -78,6 +86,9 @@ public class Main extends ApplicationAdapter {
 
     private void update(float delta) {
         if (state == State.WIN || state == State.GAME_OVER) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+                startNewGame();
+            }
             return;
         }
         if (state == State.READY) {
@@ -138,8 +149,8 @@ public class Main extends ApplicationAdapter {
         String message = null;
         switch (state) {
             case READY: message = "READY!"; break;
-            case WIN: message = "YOU WIN!"; break;
-            case GAME_OVER: message = "GAME OVER"; break;
+            case WIN: message = "YOU WIN!  Press Enter to restart"; break;
+            case GAME_OVER: message = "GAME OVER  -  Press Enter to restart"; break;
             default: break;
         }
         if (message != null) {
