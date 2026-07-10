@@ -10,6 +10,9 @@ Play it in the browser: **[hasanraj3100.github.io/pacman](https://hasanraj3100.g
 - `lwjgl3`: Primary desktop platform using LWJGL3; was called 'desktop' in older docs.
 - `html`: Web platform using GWT and WebGL. Supports only Java projects.
 
+<img width="546" height="658" alt="image" src="https://github.com/user-attachments/assets/bf54ddd6-7ee1-4f92-a52e-02e18391556d" />
+
+
 ## Gradle
 
 This project uses [Gradle](https://gradle.org/) to manage dependencies.
